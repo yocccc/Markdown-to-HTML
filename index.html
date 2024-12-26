@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown to HTML</title>
+    <style>
+        .container {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .box {
+            width: 800px;
+            height: 700px;
+            border: 1px solid grey;
+            margin: 10px;
+            overflow: scroll;
+        }
+
+        button {
+            padding: 15px 10px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 10px;
+            border: none;
+        }
+
+        /* ボタンが押された状態のスタイル */
+        button.pressed {
+            background-color: #4c74af;
+            color: white;
+        }
+
+        button:active {
+            background-color: grey;
+            /* クリック時の背景色 */
+        }
+
+        .button-container {
+            text-align: right;
+            margin-right: 30%;
+            margin-top: 70px;
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <h1>Markdown to HTML</h1>
+    </header>
+
+
+    <div class="button-container">
+        <button id="preview">プレビュー</button>
+        <button id="html">HTML</button>
+        <button id="download" download="convertedHTML.html">ダウンロード</button>
+    </div>
+
+    <div class="container">
+        <div id="editor-container" class="box"></div>
+        <div id="output-container" class="box"></div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs/loader.min.js"></script>
+    <script>
+
+        const previewButton = document.getElementById("preview");
+        const htmlButton = document.getElementById("html");
+        const outputContainer = document.getElementById("output-container");
+        const downloadButton = document.getElementById("download")
+
+        let editor;
+
+        require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.34.1/min/vs' } });
+        require(['vs/editor/editor.main'], function () {
+            editor = monaco.editor.create(document.getElementById('editor-container'), {
+                value: `<!--ここにマークダウンを記入してください-->`,
+                language: 'markdown'
+            });
+
+            htmlButton.addEventListener("click", function () {
+                previewButton.classList.remove('pressed');
+                htmlButton.classList.toggle('pressed');;
+                display(isPreview = false);
+            });
+
+            previewButton.addEventListener("click", function () {
+                htmlButton.classList.remove('pressed');
+                previewButton.classList.toggle('pressed');;
+                display();
+            });
+
+            editor.onDidChangeModelContent((event) => {
+                // HTMLボタンが押されているかどうかを判定
+                if (htmlButton.classList.contains('pressed')) display(isPreview = false);
+                else display();
+            });
+
+            downloadButton.addEventListener('click', function () {
+                const markdownContent = editor.getValue().replace("<!--ここにマークダウンを記入してください-->", "");
+                const htmlContent = marked.parse(markdownContent);
+                const blob = new Blob([htmlContent], { type: 'text/markdown' });
+                const a = document.createElement("a");
+                a.href = URL.createObjectURL(blob);
+                a.download = "convertHTML.html"
+                document.body.append(a);
+                a.click();
+                // // リンクを削除
+                document.body.removeChild(a);
+
+                // URLを解放
+                URL.revokeObjectURL(url);
+            });
+
+        });
+
+        function display(isPreview = true) {
+            const markdownContent = editor.getValue().replace("<!--ここにマークダウンを記入してください-->", "");//最初に見つかった一箇所のみ置換
+            const htmlContent = marked.parse(markdownContent);
+            if (isPreview) outputContainer.innerHTML = htmlContent;
+            else outputContainer.innerText = htmlContent
+        }
+    </script>
+
+</body>
+
+</html>
